@@ -52,7 +52,7 @@ const Products = ({ navigation }) => {
                         fontSize: 20,
                         marginLeft: 10,
                     }}>
-                        5000 RWF / Month
+                        2000 RWF / Month
                     </Text>
                 </View>
                 <View style={{

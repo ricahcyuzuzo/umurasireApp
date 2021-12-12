@@ -1,17 +1,56 @@
-import React from 'react'
-import { View, Text, Dimensions, TouchableOpacity, StatusBar, TextInput } from 'react-native'
+import React, { useState, useEffect, useContext } from 'react'
+import { View, Text, Dimensions, TouchableOpacity, StatusBar, TextInput, ScrollView, KeyboardAvoidingView } from 'react-native'
 import { Entypo } from '@expo/vector-icons';
+import { firebase } from '../config/firebase.config';
+import AppContext from '../context/Appcontext';
+
 
 const { width, height} = Dimensions.get('screen');
 const Talk = ({navigation }) => {
-    return (
+    const [text, setText] = useState('');
+    const [chats, setChats] = useState([]);
+    const {user} = useContext(AppContext);
+
+    useEffect(() => {
+        getChats(); 
+        console.log(user)
+    }, []);
+
+    const chatsRef = firebase.firestore().collection('chats');
+
+    const getChats = async () => {
+        const chats = await chatsRef.get();
+        setChats(chats.docs.map(doc => doc.data()));
+    }
+
+    const sendMessage = async () => {
+        console.log({
+            email: user.email,
+            message: text,
+            usertype: 'client'
+        })
+        chatsRef.add({
+            email: user.email,
+            message: text,
+            usertype: 'client'
+        }).then(() => {
+            alert('Sent')
+        })
+        
+       getChats();
+    }
+
+    return (<>
+        <KeyboardAvoidingView behavior='height'>
+        <ScrollView>
         <View style={{
             width: '100%',
-            height: height,
-            backgroundColor: '#fff'
+            backgroundColor: '#fff',
+            paddingBottom: 100
         }}>
             <StatusBar barStyle='dark-content' backgroundColor='#fff' />
-             <View style={{
+           
+            <View style={{
                 flexDirection: 'row',
             }}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={{
@@ -34,46 +73,42 @@ const Talk = ({navigation }) => {
                     marginLeft: 30,
                 }}>Talk To Us</Text>
             </View>
+            <View>
+            {
+                chats.map((item, idx) => (
+                    <View key={idx} style={{
+                        width: '90%',
+                        alignSelf: 'center',
+                        marginTop: 10,
+                    }}>
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: 'bold',
+                            color: '#4478c1',
+                            alignSelf: item.usertype === 'client' ? 'flex-start' : 'flex-end'
+                        }}>{item.usertype === 'client' ? 'User' : 'Supplier'}</Text>
+                        { item.toEmail ? <Text style={{
+                            textAlign: 'right'
+                        }}>To: {item.toEmail}</Text> : <></>}
+                        <Text style={{
+                            fontSize: 18,
+                            marginTop: 5,
+                            textAlign: item.usertype === 'client' ? 'left' : 'right'
+                        }}>{item.message}</Text>
+                        <Text style={{
 
-            <View style={{
-                width: '90%',
-                alignSelf: 'center',
-                marginTop: 10,
-            }}>
-                <Text style={{
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    color: '#4478c1'
-                }}>Me</Text>
-                <Text style={{
-                    fontSize: 18,
-                    marginTop: 5
-                }}>Hallo, I wanted to ask when will I recieve the package</Text>
-            </View>
-
-            <View style={{
-                width: '90%',
-                alignSelf: 'center',
-                marginTop: 10,
-            }}>
-                <Text style={{
-                    fontSize: 20,
-                    fontWeight: 'bold',
-                    color: '#4478c1',
-                    alignSelf: 'flex-end'
-                }}>Supplier</Text>
-                <Text style={{
-                    fontSize: 18,
-                    marginTop: 5
-                }}>Hallo Dear customer, you will get the package in 3 days of work. thank you for choosing Us.</Text>
-            </View>
+                        }}>{item.email}</Text>
+                    </View>
+                ))
+            }
 
             <View style={{
                 flexDirection:'row',
-                marginTop: height - 350
+                marginTop: 20
             }}>
             <TextInput 
             placeholder='Type a message...'
+            onChangeText={(val) => setText(val)}
             style={{
                 fontSize: 16,
                 width: '80%',
@@ -82,7 +117,7 @@ const Talk = ({navigation }) => {
                 borderWidth: 1,
                 borderColor: '#4478c1',
             }} />
-            <TouchableOpacity style={{
+            <TouchableOpacity onPress={sendMessage} style={{
                 width: '20%',
                 padding: 10,
                 backgroundColor:'#4478c1',
@@ -91,8 +126,10 @@ const Talk = ({navigation }) => {
                 color: '#fff'
             }}>Send</Text></TouchableOpacity>
             </View>
-
+            </View>
         </View>
+        </ScrollView>
+            </KeyboardAvoidingView></>
     )
 }
 
